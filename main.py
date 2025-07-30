@@ -1,18 +1,16 @@
-resume_text = input("Paste your resume summary: ").lower()
+import spacy
 
-keywords = {
-    "python": "Python",
-    "machine learning": "Machine Learning",
-    "data science": "Data Science"
-}
+# Load spaCy English model
+nlp = spacy.load("en_core_web_sm")
 
-found = []
+# Get resume input
+resume_text = input("Paste your resume summary: ")
 
-for key in keywords:
-    if key in resume_text:
-        found.append(keywords[key])
+# Process the text
+doc = nlp(resume_text)
 
-if found:
-    print("Great! Your resume mentions:", ", ".join(found))
-else:
-    print("Consider adding more relevant keywords.")
+# Extract keywords (nouns and proper nouns)
+keywords = [token.text for token in doc if token.pos_ in ("NOUN", "PROPN")]
+
+print("\n🧠 Extracted Keywords:")
+print(", ".join(set(keywords)))
