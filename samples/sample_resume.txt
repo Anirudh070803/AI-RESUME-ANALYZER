@@ -1,0 +1,1 @@
+Aspiring Data Scientist with strong foundation in Python, SQL, and data analytics. Skilled in building machine learning models, data visualization using Matplotlib and Seaborn, and cleaning datasets using Pandas. Familiar with Git, Jupyter Notebooks, and scikit-learn. Passionate about extracting insights from data and applying them to real-world problems.

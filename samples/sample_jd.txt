@@ -1,0 +1,1 @@
+We are hiring a Junior Data Scientist to support our AI initiatives. The candidate should have proficiency in Python, experience with NumPy and Pandas, and be familiar with cloud platforms like AWS or Azure. Strong understanding of statistical modeling, machine learning algorithms, and natural language processing is required. Experience with Power BI or Tableau is a plus.
