@@ -45,8 +45,31 @@ def compare_resume_to_jd(resume_text, jd_text):
         print("✅ Good match! Your resume aligns well with the job.")
     elif similarity_score > 0.5:
         print("⚠️ Partial match. Consider adding more relevant keywords.")
+        suggest_keywords(resume_text, jd_text)
     else:
         print("❌ Low match. Try tailoring your resume better to the job.")
+        suggest_keywords(resume_text, jd_text)
+        
+#Function 3:
+
+def suggest_keywords(resume_text, jd_text):
+    resume_doc = nlp(resume_text)
+    jd_doc = nlp(jd_text)
+
+    resume_tokens = {token.lemma_.lower() for token in resume_doc if not token.is_stop and token.is_alpha}
+    jd_tokens = {token.lemma_.lower() for token in jd_doc if not token.is_stop and token.is_alpha}
+
+    missing_keywords = jd_tokens - resume_tokens
+
+    # Filter common irrelevant terms
+    skip_words = {"experience", "knowledge", "understanding", "ability", "etc", "skills"}
+    suggestions = [word for word in missing_keywords if word not in skip_words and len(word) > 3]
+
+    if suggestions:
+        print("\n🔍 Suggested Keywords to Add to Your Resume:")
+        print(", ".join(sorted(suggestions)[:10]))  # Limit to 10 suggestions
+    else:
+        print("\n✅ No major keywords missing — your resume covers the JD well!")
 
 #Main Execution
 
