@@ -1,15 +1,18 @@
-resume_text = input("Paste your resume summary: ")
+resume_text = input("Paste your resume summary: ").lower()
 
-keywords = []
+keywords = {
+    "python": "Python",
+    "machine learning": "Machine Learning",
+    "data science": "Data Science"
+}
 
-if "Python" in resume_text:
-    keywords.append("Python")
-if "Machine Learning" in resume_text:
-    keywords.append("Machine Learning")
-if "Data Science" in resume_text:
-    keywords.append("Data Science")
+found = []
 
-if keywords:
-    print("Great! Your resume mentions:", ", ".join(keywords))
+for key in keywords:
+    if key in resume_text:
+        found.append(keywords[key])
+
+if found:
+    print("Great! Your resume mentions:", ", ".join(found))
 else:
     print("Consider adding more relevant keywords.")
