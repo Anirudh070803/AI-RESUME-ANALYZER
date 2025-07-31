@@ -71,7 +71,29 @@ def suggest_keywords(resume_text, jd_text):
     else:
         print("\n✅ No major keywords missing — your resume covers the JD well!")
 
-#Main Execution
+#Function 4: Resume length & Readability Analysis
+
+def analyze_resume_length(resume_text):
+    doc = nlp(resume_text)
+    words = [token.text for token in doc if token.is_alpha]
+    sentences = list(doc.sents)
+    
+    word_count = len(words)
+    sentence_count = len(sentences)
+    reading_time = word_count / 200  # assuming 200 words per min
+
+    print("\n📏 Resume Length Analysis:")
+    print(f"Words: {word_count}")
+    print(f"Sentences: {sentence_count}")
+    print(f"Estimated Reading Time: {reading_time:.1f} minutes")
+
+    if word_count < 100:
+        print("⚠️ Resume might be too short.")
+    elif word_count > 800:
+        print("⚠️ Resume might be too long.")
+    else:
+        print("✅ Resume length is reasonable.")
+
 
 def load_text_from_file(prompt):
     path = input(f"{prompt} (press Enter to skip): ").strip()
@@ -82,6 +104,8 @@ def load_text_from_file(prompt):
         except FileNotFoundError:
             print("❌ File not found. Falling back to manual input.")
     return input("Paste text manually:\n")
+
+#Main Execution
 
 if __name__ == "__main__":
     print("== AI Resume Analyzer ==")
@@ -97,6 +121,7 @@ if __name__ == "__main__":
 
         if choice == "1":
             resume_text = load_text_from_file("📁 Enter path to resume file")
+            analyze_resume_length(resume_text)
             extract_skills(resume_text)
 
         elif choice == "2":
