@@ -86,11 +86,34 @@ def load_text_from_file(prompt):
 if __name__ == "__main__":
     print("== AI Resume Analyzer ==")
 
-    resume_text = load_text_from_file("📁 Enter path to resume file")
-    extract_skills(resume_text)
+    while True:
+        print("\n📋 Menu:")
+        print("1. Analyze Resume Skills")
+        print("2. Compare Resume with Job Description")
+        print("3. Suggest Keywords for Resume")
+        print("4. Exit")
 
-    choice = input("\n📝 Want to compare it with a Job Description? (y/n): ").strip().lower()
-    if choice == "y":
-        jd_text = load_text_from_file("📁 Enter path to JD file")
-        compare_resume_to_jd(resume_text, jd_text)
+        choice = input("Enter your choice (1/2/3/4): ").strip()
+
+        if choice == "1":
+            resume_text = load_text_from_file("📁 Enter path to resume file")
+            extract_skills(resume_text)
+
+        elif choice == "2":
+            resume_text = load_text_from_file("📁 Enter path to resume file")
+            jd_text = load_text_from_file("📁 Enter path to JD file")
+            compare_resume_to_jd(resume_text, jd_text)
+
+        elif choice == "3":
+            resume_text = load_text_from_file("📁 Enter path to resume file")
+            jd_text = load_text_from_file("📁 Enter path to JD file")
+            suggest_keywords(resume_text, jd_text)
+
+        elif choice == "4":
+            print("👋 Exiting. Thank you for using AI Resume Analyzer!")
+            break
+
+        else:
+            print("❌ Invalid choice. Please enter 1, 2, 3, or 4.")
+
 
