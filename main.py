@@ -73,8 +73,6 @@ def suggest_keywords(resume_text, jd_text):
 
 #Main Execution
 
-if __name__ == "__main__":
-    print("== AI Resume Analyzer ==")
 def load_text_from_file(prompt):
     path = input(f"{prompt} (press Enter to skip): ").strip()
     if path:
@@ -85,12 +83,14 @@ def load_text_from_file(prompt):
             print("❌ File not found. Falling back to manual input.")
     return input("Paste text manually:\n")
 
+if __name__ == "__main__":
+    print("== AI Resume Analyzer ==")
+
     resume_text = load_text_from_file("📁 Enter path to resume file")
-
-
     extract_skills(resume_text)
 
     choice = input("\n📝 Want to compare it with a Job Description? (y/n): ").strip().lower()
     if choice == "y":
         jd_text = load_text_from_file("📁 Enter path to JD file")
         compare_resume_to_jd(resume_text, jd_text)
+
