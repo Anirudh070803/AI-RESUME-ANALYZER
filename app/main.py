@@ -1,20 +1,23 @@
 # app/main.py
 import spacy
-from fastapi import FastAPI, Depends
+from datetime import timedelta
+from typing import List 
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
+from jose import JWTError
 
-from . import models
-from .database import SessionLocal, engine
-# We now need all the Pydantic models, let's create a file for them
+from . import models, crud, logic, security, config
 from . import pydantic_models as schemas
+from .database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AI Resume Analyzer API")
 nlp = spacy.load("en_core_web_sm")
 
-# --- CORS Middleware ---
+# --- CORS Middleware (no changes) ---
 origins = ["http://localhost:3000"]
 app.add_middleware(
     CORSMiddleware,
@@ -24,7 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Dependency for DB session ---
+# --- Dependency for DB session (no changes) ---
 def get_db():
     db = SessionLocal()
     try:
@@ -32,81 +35,72 @@ def get_db():
     finally:
         db.close()
 
-# --- Logic Functions ---
-# [All your logic functions: extract_skills, get_comparison_and_suggestions, analyze_resume_length go here]
-# [No changes are needed to the functions themselves]
-def extract_skills(resume_text: str):
-    programming_skills = ["python", "sql", "java", "c++", "r", "javascript"]
-    tools = ["git", "jupyter", "excel", "vscode", "powerbi"]
-    roles = ["data scientist", "data analyst", "machine learning engineer"]
-    def create_matcher_patterns(words):
-        return [nlp.make_doc(text) for text in words]
-    from spacy.matcher import PhraseMatcher
-    matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
-    matcher.add("PROGRAMMING", create_matcher_patterns(programming_skills))
-    matcher.add("TOOLS", create_matcher_patterns(tools))
-    matcher.add("ROLES", create_matcher_patterns(roles))
-    doc = nlp(resume_text.lower())
-    matches = matcher(doc)
-    categories = {"PROGRAMMING": [], "TOOLS": [], "ROLES": []}
-    for match_id, start, end in matches:
-        label = nlp.vocab.strings[match_id]
-        matched_text = doc[start:end].text
-        if matched_text not in categories[label]:
-            categories[label].append(matched_text)
-    return categories
+# --- New Authentication Dependency ---
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def get_comparison_and_suggestions(resume_text: str, jd_text: str):
-    resume_doc = nlp(resume_text)
-    jd_doc = nlp(jd_text)
-    similarity_score = resume_doc.similarity(jd_doc)
-    resume_tokens = {token.lemma_.lower() for token in resume_doc if not token.is_stop and token.is_alpha}
-    jd_tokens = {token.lemma_.lower() for token in jd_doc if not token.is_stop and token.is_alpha}
-    missing_keywords = jd_tokens - resume_tokens
-    skip_words = {"experience", "knowledge", "understanding", "ability", "etc", "skills"}
-    suggestions = sorted([word for word in missing_keywords if word not in skip_words and len(word) > 3])[:10]
-    return {
-        "similarity_score": round(similarity_score, 2),
-        "suggested_keywords": suggestions
-    }
-
-def analyze_resume_length(resume_text: str):
-    doc = nlp(resume_text)
-    words = [token.text for token in doc if token.is_alpha]
-    word_count = len(words)
-    reading_time = round(word_count / 200, 1)
-    if word_count < 100:
-        assessment = "Resume might be too short."
-    elif word_count > 800:
-        assessment = "Resume might be too long."
-    else:
-        assessment = "Resume length is reasonable."
-    return {
-        "word_count": word_count,
-        "estimated_reading_time_minutes": reading_time,
-        "assessment": assessment
-    }
-
+def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = security.jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+        token_data = schemas.TokenData(email=email)
+    except JWTError:
+        raise credentials_exception
+    user = crud.get_user_by_email(db, email=token_data.email)
+    if user is None:
+        raise credentials_exception
+    return user
 
 # --- API Endpoints ---
+@app.post("/users/", response_model=schemas.User)
+def create_user_endpoint(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    # ... (same as before)
+    db_user = crud.get_user_by_email(db, email=user.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    return crud.create_user(db=db, user=user)
+
+@app.post("/token", response_model=schemas.Token)
+def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+    # ... (same as before)
+    user = crud.get_user_by_email(db, email=form_data.username)
+    if not user or not security.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/analyses/", response_model=List[schemas.AnalysisResponse])
+def read_user_analyses(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    analyses = crud.get_analyses_by_user(db, user_id=current_user.id)
+    return analyses
+
+# --- MODIFIED /analyze-skills/ ENDPOINT ---
 @app.post("/analyze-skills/", response_model=schemas.AnalysisResponse)
-def analyze_resume_skills(request: schemas.ResumeRequest, db: Session = Depends(get_db)):
-    detected_skills = extract_skills(request.resume_text)
+def analyze_resume_skills(
+    request: schemas.ResumeRequest, 
+    db: Session = Depends(get_db), 
+    current_user: schemas.User = Depends(get_current_user)
+):
+    detected_skills = logic.extract_skills(request.resume_text, nlp)
     db_analysis = models.Analysis(
         analysis_type="skills",
-        results={"detected_skills": detected_skills}
+        results={"detected_skills": detected_skills},
+        owner_id=current_user.id  # Link the analysis to the logged-in user
     )
     db.add(db_analysis)
     db.commit()
     db.refresh(db_analysis)
     return db_analysis
-
-@app.post("/compare-resume-jd/")
-def compare_resume_to_jd(request: schemas.CompareRequest):
-    results = get_comparison_and_suggestions(request.resume_text, request.jd_text)
-    return {"comparison_results": results}
-
-@app.post("/analyze-length/")
-def analyze_length(request: schemas.ResumeRequest):
-    results = analyze_resume_length(request.resume_text)
-    return {"length_analysis": results}

@@ -1,6 +1,6 @@
 // src/components/LengthResult.js
 import React from 'react';
-import { Box, Typography, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
 import { BarChart, AccessTime, Comment } from '@mui/icons-material';
 
 const LengthResult = ({ data }) => {
