@@ -16,7 +16,7 @@ const LengthAnalyzer = () => {
             const response = await axios.post('http://localhost:8000/analyze-length/', {
                 resume_text: resumeText
             });
-            setResults(response.data.length_analysis);
+            setResults(response.data.results.length_analysis);
         } catch (error) {
             console.error("There was an error analyzing the length:", error);
             alert("Failed to analyze length. Please check the console for details.");

@@ -18,7 +18,7 @@ const JdComparator = () => {
                 resume_text: resumeText,
                 jd_text: jdText
             });
-            setResults(response.data.comparison_results);
+            setResults(response.data.results.comparison_results);
         } catch (error) {
             console.error("There was an error comparing the texts:", error);
             alert("Failed to compare. Please check the console for details.");

@@ -10,6 +10,7 @@ import SkillAnalyzer from './components/SkillAnalyzer';
 import JdComparator from './components/JdComparator';
 import LengthAnalyzer from './components/LengthAnalyzer';
 import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRoute
+import MyAnalyses from './components/MyAnalyses';
 
 function HomePage() {
   return (
@@ -29,15 +30,8 @@ function App() {
       <Navbar />
       <Box className="App">
         <Routes>
-          {/* Wrap the HomePage Route with our new ProtectedRoute */}
-          <Route 
-            path="/" 
-            element={
-              <ProtectedRoute>
-                <HomePage />
-              </ProtectedRoute>
-            } 
-          />
+          <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+          <Route path="/my-analyses" element={<ProtectedRoute><MyAnalyses /></ProtectedRoute>} /> {/* Add this route */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>
@@ -45,5 +39,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;

@@ -20,7 +20,10 @@ const Navbar = () => {
                     AI Resume Analyzer
                 </Typography>
                 {token ? (
-                    <Button color="inherit" onClick={handleLogout}>Logout</Button>
+                    <>
+                        <Button color="inherit" component={Link} to="/my-analyses">My Analyses</Button> {/* Add this button */}
+                        <Button color="inherit" onClick={handleLogout}>Logout</Button>
+                    </>
                 ) : (
                     <>
                         <Button color="inherit" component={Link} to="/login">Login</Button>
