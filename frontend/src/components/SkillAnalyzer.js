@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { TextField, Button, Box, Typography, CircularProgress, Paper } from '@mui/material';
+import SkillsResult from './SkillsResult'; // Import the new component
 
 const SkillAnalyzer = () => {
     const [resumeText, setResumeText] = useState('');
@@ -12,10 +13,10 @@ const SkillAnalyzer = () => {
         setLoading(true);
         setSkills(null);
         try {
-            // Send a POST request to our backend API
             const response = await axios.post('http://localhost:8000/analyze-skills/', {
                 resume_text: resumeText
             });
+            // The results are nested in the response
             setSkills(response.data.results.detected_skills);
         } catch (error) {
             console.error("There was an error analyzing the skills:", error);
@@ -47,7 +48,8 @@ const SkillAnalyzer = () => {
                 <Box sx={{ mt: 4 }}>
                     <Typography variant="h6">Detected Skills:</Typography>
                     <Paper elevation={2} sx={{ p: 2, mt: 1, bgcolor: '#e3f2fd' }}>
-                        <pre>{JSON.stringify(skills, null, 2)}</pre>
+                        {/* Use the new component instead of the <pre> tag */}
+                        <SkillsResult data={skills} />
                     </Paper>
                 </Box>
             )}

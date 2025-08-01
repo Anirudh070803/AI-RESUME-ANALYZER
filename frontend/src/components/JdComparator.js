@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { TextField, Button, Box, Typography, CircularProgress, Paper, Grid } from '@mui/material';
+import ComparatorResult from './ComparatorResult'; // Import the new component
 
 const JdComparator = () => {
     const [resumeText, setResumeText] = useState('');
@@ -13,7 +14,6 @@ const JdComparator = () => {
         setLoading(true);
         setResults(null);
         try {
-            // Send a POST request to our new backend endpoint
             const response = await axios.post('http://localhost:8000/compare-resume-jd/', {
                 resume_text: resumeText,
                 jd_text: jdText
@@ -63,7 +63,8 @@ const JdComparator = () => {
                 <Box sx={{ mt: 4 }}>
                     <Typography variant="h6">Comparison Results:</Typography>
                     <Paper elevation={2} sx={{ p: 2, mt: 1, bgcolor: '#e8f5e9' }}>
-                        <pre>{JSON.stringify(results, null, 2)}</pre>
+                        {/* Use the new component instead of the <pre> tag */}
+                        <ComparatorResult data={results} />
                     </Paper>
                 </Box>
             )}

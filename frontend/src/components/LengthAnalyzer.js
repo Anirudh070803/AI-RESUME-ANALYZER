@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { TextField, Button, Box, Typography, CircularProgress, Paper } from '@mui/material';
+import LengthResult from './LengthResult'; // Import the new component
 
 const LengthAnalyzer = () => {
     const [resumeText, setResumeText] = useState('');
@@ -46,7 +47,8 @@ const LengthAnalyzer = () => {
                 <Box sx={{ mt: 4 }}>
                     <Typography variant="h6">Length Analysis Results:</Typography>
                     <Paper elevation={2} sx={{ p: 2, mt: 1, bgcolor: '#fff3e0' }}>
-                        <pre>{JSON.stringify(results, null, 2)}</pre>
+                       {/* Use the new component instead of the <pre> tag */}
+                       <LengthResult data={results} />
                     </Paper>
                 </Box>
             )}
