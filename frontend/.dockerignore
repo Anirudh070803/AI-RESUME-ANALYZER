@@ -1,0 +1,5 @@
+# .dockerignore (in the frontend directory)
+
+node_modules
+build
+.env

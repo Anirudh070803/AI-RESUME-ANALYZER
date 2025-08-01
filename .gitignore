@@ -1,2 +1,15 @@
 venv/
 __pycache__/
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# React build files and dependencies
+frontend/build/
+frontend/node_modules/

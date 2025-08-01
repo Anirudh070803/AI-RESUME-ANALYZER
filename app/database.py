@@ -2,10 +2,16 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
+import os
+
+load_dotenv() # Load environment variables from .env file
 
 # Define the database URL for PostgreSQL
-SQLALCHEMY_DATABASE_URL = "postgresql://anirudhramisetti@localhost/resume_analyzer_db"
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL") 
 
+# DEBUG LINE
+print(f"DEBUG: DATABASE_URL is '{SQLALCHEMY_DATABASE_URL}'")
 # Create the SQLAlchemy engine
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
