@@ -1,144 +1,93 @@
 import spacy
 from spacy.matcher import PhraseMatcher
+from fastapi import FastAPI
+from pydantic import BaseModel
 
-# Load spaCy English model
+# --- Pydantic Models ---
+class ResumeRequest(BaseModel):
+    resume_text: str
+
+class CompareRequest(BaseModel):
+    resume_text: str
+    jd_text: str
+
+# --- FastAPI App Initialization ---
+app = FastAPI(title="AI Resume Analyzer API")
 nlp = spacy.load("en_core_web_sm")
 
-#Function 1: Skill Category Detection
+# --- Your Logic Functions, Adapted for an API ---
 
-def extract_skills(resume_text):
+def extract_skills(resume_text: str):
+    # ... (same as before)
     programming_skills = ["python", "sql", "java", "c++", "r", "javascript"]
     tools = ["git", "jupyter", "excel", "vscode", "powerbi"]
     roles = ["data scientist", "data analyst", "machine learning engineer"]
-
     def create_matcher_patterns(words):
         return [nlp.make_doc(text) for text in words]
-
     matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
     matcher.add("PROGRAMMING", create_matcher_patterns(programming_skills))
     matcher.add("TOOLS", create_matcher_patterns(tools))
     matcher.add("ROLES", create_matcher_patterns(roles))
-
-    doc = nlp(resume_text)
+    doc = nlp(resume_text.lower())
     matches = matcher(doc)
     categories = {"PROGRAMMING": [], "TOOLS": [], "ROLES": []}
-
     for match_id, start, end in matches:
         label = nlp.vocab.strings[match_id]
-        matched_text = doc[start:end].text.lower()
+        matched_text = doc[start:end].text
         if matched_text not in categories[label]:
             categories[label].append(matched_text)
+    return categories
 
-    print("\n📂 Detected Skill Categories:")
-    for cat, items in categories.items():
-        print(f"{cat}: {', '.join(items) if items else 'None'}")
-
-#Function 2: Resume vs Job Description Matching
-
-def compare_resume_to_jd(resume_text, jd_text):
+def get_comparison_and_suggestions(resume_text: str, jd_text: str):
+    # ... (same as before)
     resume_doc = nlp(resume_text)
     jd_doc = nlp(jd_text)
     similarity_score = resume_doc.similarity(jd_doc)
-
-    print(f"\n📊 Resume-JD Similarity Score: {similarity_score:.2f} (scale: 0.00 to 1.00)")
-    if similarity_score > 0.75:
-        print("✅ Good match! Your resume aligns well with the job.")
-    elif similarity_score > 0.5:
-        print("⚠️ Partial match. Consider adding more relevant keywords.")
-        suggest_keywords(resume_text, jd_text)
-    else:
-        print("❌ Low match. Try tailoring your resume better to the job.")
-        suggest_keywords(resume_text, jd_text)
-        
-#Function 3:
-
-def suggest_keywords(resume_text, jd_text):
-    resume_doc = nlp(resume_text)
-    jd_doc = nlp(jd_text)
-
     resume_tokens = {token.lemma_.lower() for token in resume_doc if not token.is_stop and token.is_alpha}
     jd_tokens = {token.lemma_.lower() for token in jd_doc if not token.is_stop and token.is_alpha}
-
     missing_keywords = jd_tokens - resume_tokens
-
-    # Filter common irrelevant terms
     skip_words = {"experience", "knowledge", "understanding", "ability", "etc", "skills"}
-    suggestions = [word for word in missing_keywords if word not in skip_words and len(word) > 3]
+    suggestions = sorted([word for word in missing_keywords if word not in skip_words and len(word) > 3])[:10]
+    return {
+        "similarity_score": round(similarity_score, 2),
+        "suggested_keywords": suggestions
+    }
 
-    if suggestions:
-        print("\n🔍 Suggested Keywords to Add to Your Resume:")
-        print(", ".join(sorted(suggestions)[:10]))  # Limit to 10 suggestions
-    else:
-        print("\n✅ No major keywords missing — your resume covers the JD well!")
-
-#Function 4: Resume length & Readability Analysis
-
-def analyze_resume_length(resume_text):
+def analyze_resume_length(resume_text: str):
+    # Your length analysis function, modified to return data
     doc = nlp(resume_text)
     words = [token.text for token in doc if token.is_alpha]
-    sentences = list(doc.sents)
-    
     word_count = len(words)
-    sentence_count = len(sentences)
-    reading_time = word_count / 200  # assuming 200 words per min
-
-    print("\n📏 Resume Length Analysis:")
-    print(f"Words: {word_count}")
-    print(f"Sentences: {sentence_count}")
-    print(f"Estimated Reading Time: {reading_time:.1f} minutes")
+    reading_time = round(word_count / 200, 1)
 
     if word_count < 100:
-        print("⚠️ Resume might be too short.")
+        assessment = "Resume might be too short."
     elif word_count > 800:
-        print("⚠️ Resume might be too long.")
+        assessment = "Resume might be too long."
     else:
-        print("✅ Resume length is reasonable.")
+        assessment = "Resume length is reasonable."
 
+    return {
+        "word_count": word_count,
+        "estimated_reading_time_minutes": reading_time,
+        "assessment": assessment
+    }
 
-def load_text_from_file(prompt):
-    path = input(f"{prompt} (press Enter to skip): ").strip()
-    if path:
-        try:
-            with open(path, "r") as file:
-                return file.read()
-        except FileNotFoundError:
-            print("❌ File not found. Falling back to manual input.")
-    return input("Paste text manually:\n")
+# --- API Endpoints ---
+@app.post("/analyze-skills/")
+def analyze_resume_skills(request: ResumeRequest):
+    detected_skills = extract_skills(request.resume_text)
+    return {"detected_skills": detected_skills}
 
-#Main Execution
+@app.post("/compare-resume-jd/")
+def compare_resume_to_jd(request: CompareRequest):
+    results = get_comparison_and_suggestions(request.resume_text, request.jd_text)
+    return {"comparison_results": results}
 
-if __name__ == "__main__":
-    print("== AI Resume Analyzer ==")
-
-    while True:
-        print("\n📋 Menu:")
-        print("1. Analyze Resume Skills")
-        print("2. Compare Resume with Job Description")
-        print("3. Suggest Keywords for Resume")
-        print("4. Exit")
-
-        choice = input("Enter your choice (1/2/3/4): ").strip()
-
-        if choice == "1":
-            resume_text = load_text_from_file("📁 Enter path to resume file")
-            analyze_resume_length(resume_text)
-            extract_skills(resume_text)
-
-        elif choice == "2":
-            resume_text = load_text_from_file("📁 Enter path to resume file")
-            jd_text = load_text_from_file("📁 Enter path to JD file")
-            compare_resume_to_jd(resume_text, jd_text)
-
-        elif choice == "3":
-            resume_text = load_text_from_file("📁 Enter path to resume file")
-            jd_text = load_text_from_file("📁 Enter path to JD file")
-            suggest_keywords(resume_text, jd_text)
-
-        elif choice == "4":
-            print("👋 Exiting. Thank you for using AI Resume Analyzer!")
-            break
-
-        else:
-            print("❌ Invalid choice. Please enter 1, 2, 3, or 4.")
-
-
+@app.post("/analyze-length/")
+def analyze_length(request: ResumeRequest):
+    """
+    Accepts resume text and returns a length and readability analysis.
+    """
+    results = analyze_resume_length(request.resume_text)
+    return {"length_analysis": results}
